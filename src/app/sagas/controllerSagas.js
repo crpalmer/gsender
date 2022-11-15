@@ -337,11 +337,11 @@ export function* initialize() {
         });
     });
 
-    controller.addListener('toolchange:tool', (tool) => {
+    controller.addListener('toolchange:tool', (tool, commentString) => {
         Toaster.clear();
         Toaster.pop({
             type: TOASTER_INFO,
-            msg: `Tool command found - <b>${tool}</b>`,
+            msg: `Tool command found - <b>${tool}${commentString && commentString.length > 0 ? ': ' + commentString : ''}</b>`,
             duration: TOASTER_UNTIL_CLOSE
         });
     });
