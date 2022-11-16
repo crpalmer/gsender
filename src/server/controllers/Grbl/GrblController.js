@@ -67,6 +67,7 @@ import { determineMachineZeroFlagSet, determineMaxMovement, getAxisMaximumLocati
 const WAIT = '%wait';
 const PREHOOK_COMPLETE = '%pre_complete';
 const POSTHOOK_COMPLETE = '%post_complete';
+const TOOL_CHANGE_MACRO_COMPLETE = '%tool_change_macro_complete';
 const PAUSE_START = '%pause_start';
 
 const log = logger('controller:Grbl');
@@ -253,6 +254,14 @@ class GrblController {
                         }, 1500);
                         return 'G4 P0.5';
                     }
+                    if (line === TOOL_CHANGE_MACRO_COMPLETE) {
+                        log.debug('Finished tool change macro, resuming program');
+                        this.emit('toolchange:macroComplete');
+                        setTimeout(() => {
+                            this.workflow.resume();
+                        }, 1500);
+                        return 'G4 P0.5';
+                    }
                     if (line === PAUSE_START) {
                         log.debug('Found M0/M1, pausing program');
                         this.emit('sender:M0M1', { data: 'M0/M1', comment: commentString });
@@ -424,6 +433,11 @@ class GrblController {
                         this.workflow.pause({ data: 'M6', comment: commentString });
                         this.emit('toolchange:start');
                         this.runPreChangeHook(commentString);
+                    } else if (toolChangeOption === 'Macro') {
+                        if (tool) {
+                            this.emit('toolchange:tool', tool[0], commentString);
+                        }
+                        this.runToolChangeMacro(commentString);
                     }
 
                     line = '(M6)';
@@ -580,7 +594,7 @@ class GrblController {
         this.runner.on('error', (res) => {
             const code = Number(res.message) || undefined;
             const error = _.find(GRBL_ERRORS, { code: code });
-            log.error(`Error occurred at ${Date.now()}`);
+            log.error(`Error occurred at ${Date.now()}: code=${code} error=${error}`);
 
             if (this.workflow.state === WORKFLOW_STATE_RUNNING || this.workflow.state === WORKFLOW_STATE_PAUSED) {
                 const { lines, received } = this.sender.state;
@@ -1815,6 +1829,24 @@ class GrblController {
         block.push(POSTHOOK_COMPLETE);
 
         this.command('gcode', block);
+    }
+
+    runToolChangeMacro(commentString) {
+        const { toolChangeMacro } = this.toolChangeContext;
+        const macros = config.get('macros');
+        const macro = _.find(macros, { id: toolChangeMacro });
+
+        if (!macro) {
+            log.error(`Cannot find the macro: id=${toolChangeMacro}`);
+        } else {
+            this.workflow.pause({ data: 'M6', comment: commentString });
+            this.emit('toolchange:macro', macro.name);
+            const macroCode = `G4 P1\n${macro.content}`;
+            const block = this.convertGcodeToArray(macroCode);
+            block.push(TOOL_CHANGE_MACRO_COMPLETE);
+            log.debug('Running tool change macro: ' + macro.name);
+            this.command('gcode', block);
+        }
     }
 }
 
