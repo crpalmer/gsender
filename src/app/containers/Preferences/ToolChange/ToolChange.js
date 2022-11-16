@@ -27,17 +27,23 @@ const ToolChange = () => {
     const handleToolChange = (selection) => setToolChangeOption(selection.value);
     const handlePreHookChange = (e) => setPreHook(e.target.value);
     const handlePostHookChange = (e) => setPostHook(e.target.value);
+    const handleToolChangeMacro = (selection) => setToolChangeMacro(selection.value);
     const preHookRef = useRef();
     const postHookRef = useRef();
-    const handleSaveCode = () => {
-        store.set('workspace.toolChangeHooks.preHook', preHook);
-        store.set('workspace.toolChangeHooks.postHook', postHook);
+
+    const updateController = () => {
         const context = {
             toolChangeOption,
             postHook,
             preHook
         };
         controller.command('toolchange:context', context);
+    };
+
+    const handleSaveCode = () => {
+        store.set('workspace.toolChangeHooks.preHook', preHook);
+        store.set('workspace.toolChangeHooks.postHook', postHook);
+        updateController();
         Toaster.pop({
             msg: 'Saved tool change hooks',
             type: TOASTER_SUCCESS,
@@ -47,12 +53,7 @@ const ToolChange = () => {
 
     useEffect(() => {
         store.set('workspace.toolChangeOption', toolChangeOption);
-        const context = {
-            toolChangeOption,
-            postHook,
-            preHook
-        };
-        controller.command('toolchange:context', context);
+        updateController();
     }, [toolChangeOption]);
 
     return (
