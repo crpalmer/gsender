@@ -72,6 +72,7 @@ const defaultState = {
             preHook: '',
             postHook: ''
         },
+        toolChangeMacro: '',
         container: {
             primary: {
                 show: true,

@@ -91,6 +91,8 @@ class Controller {
         'toolchange:start': [],
         'toolchange:preHookComplete': [],
         'toolchange:tool': [],
+        'toolchange:macro': [],
+        'toolchange:macroComplete': [],
         'hPong': [],
         'outline:start': [],
         'file:load': [],

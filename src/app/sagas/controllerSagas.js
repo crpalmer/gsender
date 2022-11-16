@@ -102,9 +102,11 @@ export function* initialize() {
         }
         const hooks = store.get('workspace.toolChangeHooks', {});
         const toolChangeOption = store.get('workspace.toolChangeOption', 'Ignore');
+        const toolChangeMacro = store.get('workspace.toolChangeMacro', '');
         const toolChangeContext = {
             ...hooks,
-            toolChangeOption
+            toolChangeOption,
+            toolChangeMacro
         };
         controller.command('toolchange:context', toolChangeContext);
 
@@ -344,6 +346,18 @@ export function* initialize() {
             msg: `Tool command found - <b>${tool}${commentString && commentString.length > 0 ? ': ' + commentString : ''}</b>`,
             duration: TOASTER_UNTIL_CLOSE
         });
+    });
+
+    controller.addListener('toolchange:macro', (macroName) => {
+        Toaster.pop({
+            type: TOASTER_INFO,
+            msg: `Run toolchange macro: <b>${macroName}</b>`,
+            duration: TOASTER_UNTIL_CLOSE
+        });
+    });
+
+    controller.addListener('toolchange:macroComplete', () => {
+        Toaster.clear();
     });
 
     controller.addListener('grbl:iSready', (status) => {
